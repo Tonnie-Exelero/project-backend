@@ -6,7 +6,6 @@ router.use('/articles', require('./articles'));
 router.use('/tags', require('./tags'));
 router.use('/basic', require('./basic'));
 router.use('/master', require('./master'));
-router.use('/instructor', require('./instructor'));
 
 router.use(function(err, req, res, next){
   if(err.name === 'ValidationError'){
