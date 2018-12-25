@@ -3,7 +3,6 @@
  */
 var router = require('express').Router();
 var mongoose = require('mongoose');
-var Comment = mongoose.model('Comment');
 var User = mongoose.model('User');
 var Basic = mongoose.model('Basic');
 var auth = require('../auth');
