@@ -33,7 +33,7 @@ router.post('/upload', auth.required, function(req, res, next) {
         basic.author = user;
 
         return basic.save().then(function(){
-            var transporter = nodemailer.createTransport({
+            /*var transporter = nodemailer.createTransport({
                 service: 'gmail',
                 auth: {
                     user: 'dudevegan@gmail.com',
@@ -44,8 +44,8 @@ router.post('/upload', auth.required, function(req, res, next) {
             var mailOptions = {
                 from: 'dudevegan@gmail.com',
                 to: user.email,
-                subject: 'Video successfully uploaded!',
-                text: 'Your video was successfully uploaded to Pro Speed Baseball. You will be notified when it is reviewed.'
+                subject: 'Audio successfully uploaded!',
+                text: 'Your audio was successfully uploaded.'
             };
 
             transporter.sendMail(mailOptions, function(error, info){
@@ -54,7 +54,7 @@ router.post('/upload', auth.required, function(req, res, next) {
                 } else {
                     console.log('Email sent: ' + info.response);
                 }
-            });
+            });*/
 
             return res.json({basic: basic.toJSONFor(user)});
         });
@@ -68,8 +68,8 @@ router.post('/videoUpload', auth.required, function(req, res, next) {
 
         var storage = multer.diskStorage({ //multers disk storage settings
             destination: function (req, file, cb) {
-                // cb(null, './uploads/')
-                cb(null, 'C:/xampp/htdocs/uploads/')
+                cb(null, './uploads/')
+                // cb(null, 'C:/xampp/htdocs/uploads/')
             },
             filename: function (req, file, cb) {
                 var datetimestamp = Date.now();
@@ -124,13 +124,13 @@ router.get('/reviews', auth.optional, function(req, res, next) {
             }
 
             return Promise.all([
-                Basic.find({ author: user})
+                Basic.find()
                     .limit(Number(limit))
                     .skip(Number(offset))
                     .sort({createdAt: 'desc'})
                     .populate('author')
                     .exec(),
-                Basic.count({ author: user}).exec(),
+                Basic.count().exec(),
                 req.payload ? User.findById(req.payload.id) : null
             ]).then(function (results) {
                 var reviews = results[0];
@@ -185,5 +185,21 @@ router.get('/getVideo', auth.optional, function(req, res, next) {
 
     return res.json({theVideo: way}); // download function
 });
+
+// Download file
+router.get('/download', auth.optional, function(req, res, next) {
+    var query = {};
+
+    if (req.query.file) {
+        query.file = req.query.file
+    }
+
+    var way = path.resolve(".") + '/uploads/' + query.file;
+
+    console.log(way);
+
+    return res.download(way, query.file); // download function
+});
+
 
 module.exports = router;
