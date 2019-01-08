@@ -98,7 +98,7 @@ router.post('/videoUpload', auth.required, function(req, res, next) {
 });
 
 // Get videos
-router.get('/reviews', auth.optional, function(req, res, next) {
+router.get('/reviews', /*auth.optional,*/ function(req, res, next) {
     var query = {};
     var limit = 20;
     var offset = 0;
@@ -111,7 +111,7 @@ router.get('/reviews', auth.optional, function(req, res, next) {
         offset = req.query.offset;
     }
 
-    User.findById(req.payload.id).then(function(user) {
+    /*User.findById(req.payload.id).then(function(user) {
         if (!user) {
             return res.sendStatus(401);
         }
@@ -121,7 +121,7 @@ router.get('/reviews', auth.optional, function(req, res, next) {
 
             if (author) {
                 query.author = author._id;
-            }
+            }*/
 
             return Promise.all([
                 Basic.find()
@@ -143,10 +143,10 @@ router.get('/reviews', auth.optional, function(req, res, next) {
                     }),
                     reviewsCount: reviewsCount
                 });
-            });
-        }).catch(next);
+            }).catch(next);
+        });/*.catch(next);
    });
-});
+});*/
 
 router.put('/update', auth.required, function(req, res, next) {
     var query = {};
