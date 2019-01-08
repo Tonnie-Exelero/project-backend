@@ -23,7 +23,7 @@ router.param('basic', function(req, res, next, slug) {
         }).catch(next);
 });
 
-// Post basic account video
+// Post basic account audio
 router.post('/upload', auth.required, function(req, res, next) {
     User.findById(req.payload.id).then(function(user){
         if (!user) { return res.sendStatus(401); }
@@ -34,42 +34,42 @@ router.post('/upload', auth.required, function(req, res, next) {
 
         return basic.save().then(function(){
             /*var transporter = nodemailer.createTransport({
-                service: 'gmail',
-                auth: {
-                    user: 'dudevegan@gmail.com',
-                    pass: 'project12345'
-                }
-            });
+             service: 'gmail',
+             auth: {
+             user: 'dudevegan@gmail.com',
+             pass: 'project12345'
+             }
+             });
 
-            var mailOptions = {
-                from: 'dudevegan@gmail.com',
-                to: user.email,
-                subject: 'Audio successfully uploaded!',
-                text: 'Your audio was successfully uploaded.'
-            };
+             var mailOptions = {
+             from: 'dudevegan@gmail.com',
+             to: user.email,
+             subject: 'Audio successfully uploaded!',
+             text: 'Your audio was successfully uploaded.'
+             };
 
-            transporter.sendMail(mailOptions, function(error, info){
-                if (error) {
-                    console.log(error);
-                } else {
-                    console.log('Email sent: ' + info.response);
-                }
-            });*/
+             transporter.sendMail(mailOptions, function(error, info){
+             if (error) {
+             console.log(error);
+             } else {
+             console.log('Email sent: ' + info.response);
+             }
+             });*/
 
             return res.json({basic: basic.toJSONFor(user)});
         });
     }).catch(next);
 });
 
-// Post single video
+// Post single audio
 router.post('/videoUpload', auth.required, function(req, res, next) {
     User.findById(req.payload.id).then(function(user){
         if (!user) { return res.sendStatus(401); }
 
         var storage = multer.diskStorage({ //multers disk storage settings
             destination: function (req, file, cb) {
-                cb(null, './uploads/')
-                // cb(null, 'C:/xampp/htdocs/uploads/')
+                // cb(null, './uploads/')
+                cb(null, 'C:/xampp/htdocs/uploads/')
             },
             filename: function (req, file, cb) {
                 var datetimestamp = Date.now();
@@ -97,8 +97,8 @@ router.post('/videoUpload', auth.required, function(req, res, next) {
     }).catch(next);
 });
 
-// Get videos
-router.get('/reviews', /*auth.optional,*/ function(req, res, next) {
+// Get audios
+router.get('/reviews', function(req, res, next) {
     var query = {};
     var limit = 20;
     var offset = 0;
@@ -111,43 +111,86 @@ router.get('/reviews', /*auth.optional,*/ function(req, res, next) {
         offset = req.query.offset;
     }
 
-    /*User.findById(req.payload.id).then(function(user) {
-        if (!user) {
-            return res.sendStatus(401);
+    return Promise.all([
+        Basic.find()
+            .limit(Number(limit))
+            .skip(Number(offset))
+            .sort({createdAt: 'desc'})
+            .populate('author')
+            .exec(),
+        Basic.count().exec(),
+        req.payload ? User.findById(req.payload.id) : null
+    ]).then(function (results) {
+        var reviews = results[0];
+        var reviewsCount = results[1];
+        var user = results[2];
+
+        return res.json({
+            reviews: reviews.map(function (review) {
+                return review.toJSONFor(user);
+            }),
+            reviewsCount: reviewsCount
+        });
+    }).catch(next);
+});
+
+// Search Clips
+router.get('/searchClip', function(req, res, next) {
+    var query = {};
+    var limit = 20;
+    var offset = 0;
+
+    if(typeof req.query.limit !== 'undefined'){
+        limit = req.query.limit;
+    }
+
+    if(typeof req.query.offset !== 'undefined'){
+        offset = req.query.offset;
+    }
+
+    if (req.query.search) {
+        query.search = req.query.search
+    }
+
+    return Promise.all([
+        Basic.find()
+            .limit(Number(limit))
+            .skip(Number(offset))
+            .sort({createdAt: 'desc'})
+            .populate('author')
+            .exec(),
+        Basic.count().exec(),
+        req.payload ? User.findById(req.payload.id) : null
+    ]).then(function (results) {
+        var theResults = results[0];
+
+        var searchResults = [];
+
+        for (var i=0; i<theResults.length; i++){
+            var theNames = theResults[i].clipName;
+            var theNotes = theResults[i].notes;
+
+            var jj = theNames.includes(query.search);
+            var kk = theNotes.includes(query.search);
+
+            if (jj === true || kk === true){
+                searchResults.push(theResults[i]);
+            }
         }
 
-        Promise.resolve(req.payload ? User.findById(req.payload.id) : null).then(function(results){
-            var author = results[0];
+        var searchResultsCount = results[1];
+        var user = results[2];
 
-            if (author) {
-                query.author = author._id;
-            }*/
+        return res.json({
+            searchResults: searchResults.map(function (searchResult) {
+                return searchResult.toJSONFor(user);
+            }),
+            searchResultsCount: searchResultsCount
+        });
+    }).catch(next);
+});
 
-            return Promise.all([
-                Basic.find()
-                    .limit(Number(limit))
-                    .skip(Number(offset))
-                    .sort({createdAt: 'desc'})
-                    .populate('author')
-                    .exec(),
-                Basic.count().exec(),
-                req.payload ? User.findById(req.payload.id) : null
-            ]).then(function (results) {
-                var reviews = results[0];
-                var reviewsCount = results[1];
-                var user = results[2];
-
-                return res.json({
-                    reviews: reviews.map(function (review) {
-                        return review.toJSONFor(user);
-                    }),
-                    reviewsCount: reviewsCount
-                });
-            }).catch(next);
-        });/*.catch(next);
-   });
-});*/
-
+// Update files
 router.put('/update', auth.required, function(req, res, next) {
     var query = {};
 
@@ -173,17 +216,19 @@ router.put('/update', auth.required, function(req, res, next) {
     });
 });
 
-// Get video file
-router.get('/getVideo', auth.optional, function(req, res, next) {
+// Get audio file
+router.get('/getClip', auth.optional, function(req, res, next) {
     var query = {};
 
-    if (req.query.video) {
-        query.video = req.query.video
+    if (req.query.clip) {
+        query.clip = req.query.clip
     }
 
-    var way = path.resolve(".") + '/uploads/' + query.video;
+    // var way = path.resolve(".") + '/uploads/' + query.clip;
 
-    return res.json({theVideo: way}); // download function
+    var way = 'C:/xampp/htdocs/uploads/' + query.clip;
+
+    return res.json({theClip: way}); // download function
 });
 
 // Download file
