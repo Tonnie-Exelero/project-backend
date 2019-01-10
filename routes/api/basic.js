@@ -246,5 +246,4 @@ router.get('/download', auth.optional, function(req, res, next) {
     return res.download(way, query.file); // download function
 });
 
-
 module.exports = router;

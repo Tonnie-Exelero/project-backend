@@ -60,7 +60,26 @@ router.post('/users/login', function(req, res, next){
         return res.status(422).json({errors: {password: "can't be blank"}});
     }
 
-    passport.authenticate('local', {session: false}, function(err, user, info){
+    User.findOne({email: req.body.user.email}).then(function(user, info){
+        if(!user){
+            return res.status(422).json(info);
+        }
+
+        if(user){
+            user.active = true;
+
+            if (user.active === true) {
+                user.token = user.generateJWT();
+                return res.json({user: user.toAuthJSON()});
+            } else {
+                return res.status(422).json(info);
+            }
+        } else {
+            return res.status(422).json(info);
+        }
+    }).catch(next);
+
+    /*passport.authenticate('local', {session: false}, function(err, user, info){
         if(err){ return next(err); }
 
         if(user){
@@ -73,7 +92,7 @@ router.post('/users/login', function(req, res, next){
         } else {
             return res.status(422).json(info);
         }
-    })(req, res, next);
+    })(req, res, next);*/
 });
 
 router.post('/users', function(req, res, next){
